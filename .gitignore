@@ -2,3 +2,5 @@
 *.pdf
 
 .idea/
+
+example_files/sample-large.csv

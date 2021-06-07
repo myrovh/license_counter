@@ -27,6 +27,8 @@ const (
 	DESKTOP
 )
 
+// main is a basic cmd line wrapper around CalculateTotalLicenses. Simply use the "file" flag to point to a csv file
+// you want to parse.
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	fileName := flag.String("file", "", "filename of the csv file to parse")
@@ -50,6 +52,8 @@ func main() {
 	fmt.Println(total)
 }
 
+// CalculateTotalLicenses receives a io.Reader containing a csv and a applicationID string that will be used to filter
+// the csv rows.
 func CalculateTotalLicenses(reader io.Reader, application string) (totalLicenses int, err error) {
 	users, err := parseCsv(reader, application)
 
@@ -84,6 +88,14 @@ func CalculateTotalLicenses(reader io.Reader, application string) (totalLicenses
 	return
 }
 
+// parseCsv converts a specific format of csv file into a go struct that can then be used to calculate the required
+// license count for the application given by applicationID.
+//
+// The specific column format of the expected file is indicated below:
+// `ComputerID,UserID,ApplicationID,ComputerType,Comment`
+//
+// if the wrong number of columns are found the function will return an error. No other attempts to validate the date
+// are taken
 func parseCsv(reader io.Reader, applicationID string) (users map[string][]computer, err error) {
 	csvReader := csv.NewReader(reader)
 
@@ -96,6 +108,9 @@ func parseCsv(reader io.Reader, applicationID string) (users map[string][]comput
 		}
 		if err != nil {
 			return users, err
+		}
+		if len(row) != 5 {
+			return users, fmt.Errorf("expects to parse a csv with 5 columns found %d", len(row))
 		}
 
 		if row[2] == applicationID {
@@ -125,7 +140,7 @@ func parseCsv(reader io.Reader, applicationID string) (users map[string][]comput
 			} else if inputComputerType == LAPTOP.String() {
 				newComputer.computerType = LAPTOP
 			} else {
-				log.Warn().Strs("row_contents", row).Msg("row isn't  or LAPTOP: skipping")
+				log.Warn().Strs("row_contents", row).Msg("row isn't DESKTOP or LAPTOP: skipping")
 				continue
 			}
 
